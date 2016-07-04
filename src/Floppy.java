@@ -1,3 +1,5 @@
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -24,6 +26,7 @@ public class Floppy {
     }
     
     private void initFloppy() {
+    	
     	//一个磁盘有两个盘面
     	floppy.put(MAGNETIC_HEAD.MAGNETIC_HEAD_0.ordinal(), initFloppyDisk());
     	floppy.put(MAGNETIC_HEAD.MAGETIC_HEAD_1.ordinal(), initFloppyDisk());
@@ -67,14 +70,15 @@ public class Floppy {
     }
     
     public void setSector(int sector) {
-    	if (sector < 1) {
-    		this.current_sector = 1;
+    	//sector 编号从1到18
+    	if (sector < 0) {
+    		this.current_sector = 0;
     	}
     	else if (sector > 18) {
-    		this.current_sector = 18;
+    		this.current_sector = 18 - 1;
     	}
     	else {
-    		this.current_sector = sector;
+    		this.current_sector = sector - 1;
     	}
     }
     
@@ -83,9 +87,10 @@ public class Floppy {
     	setCylinder(cylinder_num);
     	setSector(sector_num);
     	
-    	ArrayList<ArrayList<byte[]>> disk = floppy.get(this.magneticHead);
+    	ArrayList<ArrayList<byte[]>> disk = floppy.get(this.magneticHead.ordinal());
     	ArrayList<byte[]> cylinder = disk.get(this.current_cylinder);
-    	byte[] sector = cylinder.get(this.current_cylinder);
+ 
+    	byte[] sector = cylinder.get(this.current_sector);
     	
     	return sector;
     }
@@ -95,8 +100,26 @@ public class Floppy {
     	setCylinder(cylinder_num);
     	setSector(sector_num);
     	
-    	ArrayList<ArrayList<byte[]>> disk = floppy.get(this.magneticHead);
+    	ArrayList<ArrayList<byte[]>> disk = floppy.get(this.magneticHead.ordinal());
     	ArrayList<byte[]> cylinder = disk.get(this.current_cylinder);
-    	cylinder.set(sector_num, buf);
+    	cylinder.set(this.current_sector, buf);
+    }
+    
+    public void makeFloppy(String fileName) {
+    	try {
+			DataOutputStream out = new DataOutputStream(new FileOutputStream(fileName));
+			for (int head = 0; head <= MAGNETIC_HEAD.MAGETIC_HEAD_1.ordinal(); head++) {
+				for (int cylinder = 0; cylinder < CYLINDER_COUNT; cylinder++) {
+					for (int sector = 1; sector <= SECTORS_COUNT; sector++) {
+						byte[] buf = readFloppy(MAGNETIC_HEAD.values()[head], cylinder, sector);
+						out.write(buf);
+					}
+				}
+			}
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 }
